@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  
+<!-- Mirrored from willwam.me/posts/2022-01-02-tetctf by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 20 Feb 2023 20:37:13 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/img/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/img/favicon.ico">
+  <link rel="mask-icon" href="../assets/img/favicon.ico">
+  <link rel="stylesheet" href="../assets/css/normalize.css">
+  <link rel="stylesheet" href="../assets/css/ockham.css">
+  <script async src="../assets/js/ockham.js"></script>
+  <script async src="../../use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
+  
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+        inlineMath: [['$','$']]
+      }
+    });
+  </script>
+  <script src="../../cdn.mathjax.org/mathjax/latest/MathJaxdda6.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script> 
+  
+<title> TetCTF 2022 - fault | willwam845 </title>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PPZXWFFSPB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-PPZXWFFSPB');
+</script>
+</head>
+
+
+  <body>
+    <input type="checkbox" class="sidebar-checkbox" id="sidebar-checkbox">
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-item">
+    <img src="../assets/img/melon.png" class="pfp">
+  </div>
+
+  
+  <nav class="sidebar-nav">
+    <ul class="sidebar-nav-list">
+    
+      <li">
+        <a href="../index.html" class="sidebar-nav-item ">
+          home
+        </a>
+      </li>
+    
+      <li">
+        <a href="../about/index.html" class="sidebar-nav-item ">
+          about
+        </a>
+      </li>
+    
+      <li">
+        <a href="../projects/index.html" class="sidebar-nav-item ">
+          projects
+        </a>
+      </li>
+    
+      <li">
+        <a href="../archive/index.html" class="sidebar-nav-item ">
+          archive
+        </a>
+      </li>
+    
+      <li">
+        <a href="../tags/index.html" class="sidebar-nav-item ">
+          tags
+        </a>
+      </li>
+    
+    </ul>
+  </nav>
+  
+
+  
+  <div class="sidebar-item">
+    
+      <a class="social-icon" href="https://twitter.com/willwam845" target="_blank">
+        <i class="fab fa-twitter" title="twitter"></i>
+      </a>
+    
+      <a class="social-icon" href="https://github.com/willwam845" target="_blank">
+        <i class="fab fa-github" title="gitHub"></i>
+      </a>
+    
+  </div>
+  
+
+  <div class="sidebar-item">
+    <small>
+      powered by <a href="https://jekyllrb.com/" target="_blank">Jekyll</a> & <a href="https://github.com/zivong/ockham" target="_blank">Ockham</a>
+    </small>
+  </div>
+</div>
+
+
+    <div class="wrap">
+      <div class="container">
+
+        <header class="masthead">
+          <div class="masthead-title">
+            <a href="../index.html" title="Home">willwam845</a>
+            <small></small>
+          </div>
+        </header>
+
+        <main>
+          <article class="post">
+  <h1 class="post-title">TetCTF 2022 - fault</h1>
+  <div class="post-meta">
+    <time datetime="2022-01-02T00:00:00+00:00" itemprop="datePublished">
+      02 Jan 2022
+    </time></div>
+
+  <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">secrets</span> <span class="kn">import</span> <span class="n">randbits</span>
+<span class="kn">from</span> <span class="nn">Crypto.Util.number</span> <span class="kn">import</span> <span class="n">getPrime</span>  <span class="c1"># pycryptodome
+</span>
+<span class="n">NBITS</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">D_NBITS</span> <span class="o">=</span> <span class="mi">128</span>  <span class="c1"># small `d` makes decryption faster
+</span>
+
+<span class="k">class</span> <span class="nc">Cipher</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">getPrime</span><span class="p">(</span><span class="n">NBITS</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">getPrime</span><span class="p">(</span><span class="n">NBITS</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="n">q</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">getPrime</span><span class="p">(</span><span class="n">D_NBITS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">e</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">d</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">q</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">encrypt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="p">.</span><span class="n">n</span>
+        <span class="k">return</span> <span class="nb">pow</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">faultily_decrypt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="p">.</span><span class="n">n</span>
+        <span class="n">fault_vector</span> <span class="o">=</span> <span class="n">randbits</span><span class="p">(</span><span class="n">D_NBITS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fault_vector</span><span class="p">,</span> <span class="nb">pow</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">d</span> <span class="o">^</span> <span class="n">fault_vector</span><span class="p">,</span> <span class="bp">self</span><span class="p">.</span><span class="n">n</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">secret</span> <span class="kn">import</span> <span class="n">FLAG</span>
+    <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">()</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">cipher</span><span class="p">.</span><span class="n">encrypt</span><span class="p">(</span><span class="nb">int</span><span class="p">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">FLAG</span><span class="p">.</span><span class="n">encode</span><span class="p">(),</span> <span class="s">"big"</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2022</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="nb">input</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">cipher</span><span class="p">.</span><span class="n">faultily_decrypt</span><span class="p">(</span><span class="n">c</span> <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">'c'</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">)))</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>The server generates a 1024 bit modulus $n$ and a 128 bit prime as the private exponent $d$. We are then given access to an RSA decryption oracle, which we can use 2022 times.</p>
+
+<p>On each call to the oracle, we can either:</p>
+
+<ul>
+  <li>decrypt the flag $c$</li>
+  <li>decrypt any integer of our choice</li>
+</ul>
+
+<p>However, the decryption function is broken, and instead of computing $c^d \mod n$, it generates a random 128 bit value $v$, and returns the value:</p>
+
+\[c^{d\oplus v}\mod n\]
+
+<p>for both functions of the oracle.</p>
+
+<p>As well as this, neither $n$ or $e$ is given.</p>
+
+<h1 id="solution">solution</h1>
+
+<p>tl;dr: mitm + z3 to recover $d$, then common modulus attack to recover flag.</p>
+
+<p>Firstly, since we are given nothing else apart from the oracle, we should first recover $n$. This is quite simple to do: asking for the decryption of -1. If the resulting $d_i$ is odd (which should happen with a probability 1/2), $-1^{d_i}$ will equal $-1 \mod n =  n - 1$, and so $n$ has been recovered.</p>
+
+<p>Then, we need to recover $d$.</p>
+
+<h2 id="before">before</h2>
+
+<p>Before we delve into the actual challenge, consider the equation $a+ s = b$, where $a, b$ are unknown, however we know the value of $v = a\oplus b$, and we are trying to find the difference $s$ between $a$ and $b$.</p>
+
+<p>For each of the bits $v_i$ in $v$, we have two cases:</p>
+
+<p><strong>Case 1: $v_i = 0$</strong></p>
+
+<p>In this case, we know that the respective bits of $a$ and $b$ are also equal, meaning that $a_i = b_i$, therefore $a_i - b_i = 0$, and so this means that the difference $s$ is not affected by this bit.</p>
+
+<p><strong>Case 2: $v_i = 1$</strong></p>
+
+<p>The respective bits of $a$ and $b$ are different, however we do not know which of the bits is 0 and which is 1. What we do know however regardless of which bit is which, the absolute value of $a_i - b_i = 1$, meaning that $s$ is affected by this bit, and we either add $2^i$ or subtract $2^i$ (since we don’t know if the difference is positive or negative, only that it exists for this bit)</p>
+
+<p>So, we know that the value of $s$ is <strong>only</strong> affected by the one-bits in $v$, and we so can represent $s$ as a sum:</p>
+
+\[\sum_{i=0}^{128} v_i * 2^i * k_i\]
+
+<p>where $\forall i, k_i \in {-1, 1}$ (to get the positive or negative).</p>
+
+<p>Notice then for a given $v$ with $l$ number of one-bits, there exist $2^{l}$ solutions for $s$.</p>
+
+<h2 id="application">application</h2>
+
+<p>Now, in the challenge we are given $c^{d \oplus v_1}$ and $c^{d \oplus v_2}$ both taken $\mod n$. Notice then if we let $a = d \oplus v_1, b = d \oplus v_2, v = v_1 \oplus v_2$ (this is actually $d \oplus v_1 \oplus d \oplus v_2$, however the $d$’s cancel out, so we can use this value for $v$), the difference between $a$ and $b$ will be the value $s$ where:</p>
+
+\[c^a * c^s = c^b\]
+
+<p>since by the rules of indices ($c^{a} * c^{s} = c^{a + s}$), $a + s = b$. Then, since we know the value of $v$, we can work out all $2^l$ solutions for $s$ and see if $c^a * c^s = c^b$, and if so then we know that value for $s$ is the actual difference between $a$ and $b$. I wrote a branching algorithm to do this for me:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">c</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">n</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">p1</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">v1</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">p2</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">v2</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">v</span> <span class="o">=</span> <span class="n">v1</span> <span class="o">^</span> <span class="n">v2</span>
+<span class="n">ca</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">v2</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">bits</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">bit_length</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">&gt;&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">bits</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span>
+
+<span class="n">mul</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="nb">pow</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bits</span><span class="p">]</span>
+<span class="n">maxdepth</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mul</span><span class="p">)</span> <span class="c1"># number of one-bits
+</span>
+<span class="k">def</span> <span class="nf">tree</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">diff</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="n">maxdepth</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ca</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span> <span class="o">%</span> <span class="n">n</span> <span class="o">==</span> <span class="n">cb</span><span class="p">:</span> <span class="c1"># check if the solution is correct
+</span>            <span class="k">print</span><span class="p">(</span><span class="s">"sice"</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tree</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">+</span> <span class="n">bits</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span> <span class="c1"># + 2^i
+</span>        <span class="n">tree</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">-</span> <span class="n">bits</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span> <span class="c1"># - 2^i
+</span>        
+<span class="n">tree</span><span class="p">(</span><span class="n">ca</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Then, if we receive many $v_i$’s and find pairs where $l$ is small, we should be able to bruteforce the $2^l$ solutions for $s$.</p>
+
+<p>Thus, the attack plan is as follows:</p>
+
+<ul>
+  <li>recover $n$ by decrypting -1</li>
+  <li>collect around 2000~ pairs of $(v_i, c^{d \oplus v_i})$</li>
+  <li>find pairs of $v_i$ where $l$ is small</li>
+  <li>recover the difference between $d \oplus v_1$ and $d \oplus v_2$</li>
+  <li>use this to recover bits of $d$</li>
+  <li>repeat until all of $d$ is recovered</li>
+  <li>profit?</li>
+</ul>
+
+<p>There’s only one small issue however, this is not feasible.</p>
+
+<p>If we experiment with around 2000 $v_i’s$ locally, we see that usually the best $l$ values are around 36-40 bits.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+
+<span class="n">v_is</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="p">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2000</span><span class="p">)]</span>
+<span class="n">ls</span> <span class="o">=</span> <span class="p">[</span><span class="nb">bin</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="n">y</span><span class="p">).</span><span class="n">count</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">itertools</span><span class="p">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">v_is</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">2</span><span class="p">)]</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">Counter</span><span class="p">(</span><span class="n">ls</span><span class="p">).</span><span class="n">items</span><span class="p">()))</span>
+<span class="c1"># [(36, 1), (37, 1), (38, 6), (39, 12), (40, 14), (41, 34), (42, 67)...
+</span></code></pre></div></div>
+
+<p>This is probably not feasible, even if we were to chuck large amounts of computing power at it. So, how can we make this feasible? The answer is simple: the <a href="https://en.wikipedia.org/wiki/Meet-in-the-middle_attack">meet in the middle attack</a>.</p>
+
+<h2 id="mitm-time">mitm time</h2>
+
+<p>The general idea for meet in the middle is that we save <strong>time</strong> by using <strong>space</strong>. This attack works when we have a known plaintext/ciphertext pair $(p, c)$ where $p$ has been encrypted several times by some “encryption” function $E(p, k_i)$ using an $i$ number of keys $k_1, k_2, \dots k_i$. So, we have:</p>
+
+\[c_1 = E(p, k_1)\\
+c_2 = E(c_1, k_2)\\
+\vdots\\
+c = E(c_{i-1}, k_i)\]
+
+<p>Now, the function $E$ has an inverse/”decryption” function, $D$, which should satisfy $D(E(p, k), k) = p$. Notice then that if we pick a key number $m$, then we can encrypt $m$ number of keys to get $c_m$ (the <em>middle</em> point)</p>
+
+\[c_1 = E(p, k_1)\\
+c_2 = E(c_1, k_2)\\
+\vdots\\
+c_m = E(c_{m-1}, k_m)\]
+
+<p>However, since we also have the ciphertext, we could also decrypt with the remaining $(i - m)$ keys to get the same $c_m$, as:</p>
+
+\[c_{i-1} = D(c, k_i)\\
+c_{i-2} = D(c_{i-1}, k_{i-1})\\
+\vdots\\
+c_m = D(c_{m+1}, k_{m+i})\]
+
+<p>Then notice that since we know these two are equal, we can bruteforce the $m$ number of keys required to reach $c_m$ by encryption of $p$ and store them in a lookup table along with the keys used to get there, and then try all $(i - m)$ keys to attempt to reach a $c_m$ that we stored by decryption of $c$. If we find a $c_m$ we reached before, we know that is the actual value of $c_m$, and figure out what keys we used to get there. If we choose $m$ to be half of $i$, we can save a significant amount of time (example, if we have $i=2$ and each key being $20$ bits long, instead of bruteforcing $2^{20} * 2^{20} = 2^{40}$, we only brute $2^{20} + 2^{20} = 2^{21}$, a significant time save).</p>
+
+<h2 id="application-2">application 2</h2>
+
+<p>So, we’ll apply this attack to our situation. Firstly, we choose $v_1$ and $v_2$ that results in $l$ being small, and also get the corresponding ciphertexts $c_1, c_2$. The encryption function $E$ is then multiplying the value by either $x^{1}$ or $x^{-1}$, which is determined by the key $k_i \in {1, -1}$. The decryption function $D$ is then therefore division by $x^1$ or $x^-1$. I’ll reuse code from the branching algorithm.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">n</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">p1</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">v1</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">p2</span> <span class="o">=</span> <span class="c1"># ...
+</span><span class="n">v2</span> <span class="o">=</span> <span class="c1"># ...
+</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">v1</span> <span class="o">^</span> <span class="n">v2</span>
+<span class="n">bits</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">bit_length</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">&gt;&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">bits</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span>
+
+<span class="n">bits1</span> <span class="o">=</span> <span class="n">bits</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">bits2</span> <span class="o">=</span> <span class="n">bits</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">:]</span>
+<span class="n">n1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bits1</span><span class="p">)</span>
+<span class="n">n2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bits2</span><span class="p">)</span>
+<span class="n">mul1</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="nb">pow</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bits1</span><span class="p">]</span>
+<span class="n">mul2</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">pow</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bits2</span><span class="p">]</span>
+
+<span class="c1"># meet in the middle
+</span><span class="n">su</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">lookup_one</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">def</span> <span class="nf">tree1</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">diff</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="n">n1</span><span class="p">:</span>
+        <span class="n">lookup_one</span><span class="p">[</span><span class="n">current</span><span class="p">]</span> <span class="o">=</span> <span class="n">diff</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tree1</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul1</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">+</span> <span class="n">bits1</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span>
+        <span class="n">tree1</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul1</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">-</span> <span class="n">bits1</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">tree2</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">diff</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">su</span>
+    <span class="k">if</span> <span class="n">su</span><span class="p">:</span> <span class="k">return</span>
+    <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="n">p2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">current</span> <span class="ow">in</span> <span class="n">lookup_one</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">"sice"</span><span class="p">,</span> <span class="n">lookup_one</span><span class="p">[</span><span class="n">current</span><span class="p">],</span> <span class="n">diff</span><span class="p">,</span> <span class="n">current</span><span class="p">)</span>
+            <span class="n">su</span> <span class="o">=</span> <span class="n">lookup_one</span><span class="p">[</span><span class="n">current</span><span class="p">]</span> <span class="o">+</span> <span class="n">diff</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tree2</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul2</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">+</span> <span class="n">bits2</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span>
+        <span class="n">tree2</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul2</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">-</span> <span class="n">bits2</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span>
+
+<span class="n">tree1</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"lookup created"</span><span class="p">)</span>
+<span class="n">tree2</span><span class="p">(</span><span class="n">p2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This should be fast enough to give us multiple equations of the form:</p>
+
+\[(d \oplus v_1) + s = (d \oplus v_2)\]
+
+<p>where $d$ is the only unknown. We can plug these into z3 (because I’m lazy) to solve it for us until we get a prime value for $d$ as shown in the challenge code.</p>
+
+<p>Now that we have $d$, we need to recover the flag. However, we still only have the oracle which can faultily decrypt the flag. How can we get the flag without the actual ciphertext?</p>
+
+<h2 id="flag-recovery">flag recovery</h2>
+
+<p>Firstly, since we have the value of $d$, we can work out the actual private keys as we know $v_i$. Then, asking for the decryption of the flag will give us $c^{d_i}$. We can retrieve multiple encryptions to get the flag ciphertext encrypted with different exponents (but same modulus!), which might sound familiar to you, as we can use the common modulus attack. I’ll briefly describe it here.</p>
+
+<p>Let the two exponents be $d_1, d_2$. Suppose $gcd(d_1, d_2) = 1$ (if this is not the case, we can just collect more $d_i$ until we find a pair which does have a gcd of 1).</p>
+
+<p>By <a href="https://en.wikipedia.org/wiki/Bézout%27s_identity">Bezout’s Identity</a>, we know that there exist two integers $a, b$, where $ad_1 + bd_2 = 1$, which also holds $\mod n$. These integers are findable using the <a href="https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm">Extended Greatest Common Divisor algorithm</a>. Then, knowing this and combining it with the rules of indices, we can manipulate the ciphertexts $c_1, c_2$ and their exponents in such a way that the resulting exponent is equal to 1, meaning we have the original flag plaintext.</p>
+
+<p>Since $c^{a} * c^{b} = c^{a + b}$, we’ll ideally want to find values of $c^{ad_1}$ and $c^{bd_2}$, because remember, $ad_1 + bd_2 = 1$, so if we multiply them, we should just be left with $c^1$, or $c$. Getting these values is quite simple; we use the fact that $c^{a^b} = c^{ab}$, so we raise $c_1 = c^{d_1}$ to the power of $a$ to get $c^{ad_1}$, $c_2 = c^{d_2}$ to the power of $b$ to get $c^{bd_2}$.</p>
+
+<p>After recovering the actual flag ciphertext, we have the private key, so we can just decrypt it.</p>
+
+<h1 id="solve-script">solve script</h1>
+
+<p>Putting this altogether, we get a script that runs in about 5 minutes. The main place where the script is kinda slow is the actual meet in the middle itself, as we have to do multiple brutes of around $2^{21}$.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># type: ignore
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">from</span> <span class="nn">z3</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">Crypto.Util.number</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">gcd</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">"139.162.61.222"</span><span class="p">,</span> <span class="mi">13373</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">s</span><span class="p">.</span><span class="n">sendline</span><span class="p">((</span><span class="sa">f</span><span class="s">"</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="se">\n</span><span class="s">"</span> <span class="o">*</span> <span class="n">rep</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">dat</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">recvlines</span><span class="p">(</span><span class="n">rep</span><span class="p">)</span>
+    <span class="n">dat</span> <span class="o">=</span> <span class="p">[</span><span class="n">ast</span><span class="p">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">line</span><span class="p">.</span><span class="n">decode</span><span class="p">())</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">dat</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">rep</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">dat</span>
+
+<span class="n">dec</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">while</span> <span class="n">dec</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">fault</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">query</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="n">dec</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="n">flagdat</span> <span class="o">=</span> <span class="n">query</span><span class="p">(</span><span class="s">"c"</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">flags</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">flagdat</span><span class="p">)</span>
+
+<span class="n">tupledat</span> <span class="o">=</span> <span class="n">query</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span>
+<span class="n">tuples</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">tupledat</span><span class="p">)</span>
+
+<span class="n">s</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"server data recovered"</span><span class="p">)</span>
+<span class="n">rands</span> <span class="o">=</span> <span class="n">tuples</span><span class="p">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="n">goodtuples</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">def</span> <span class="nf">egcd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span> 
+    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>  
+        <span class="k">return</span> <span class="n">b</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span>
+    <span class="n">gcd</span><span class="p">,</span><span class="n">x1</span><span class="p">,</span><span class="n">y1</span> <span class="o">=</span> <span class="n">egcd</span><span class="p">(</span><span class="n">b</span><span class="o">%</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> 
+    <span class="n">x</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">-</span> <span class="p">(</span><span class="n">b</span><span class="o">//</span><span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">x1</span> 
+    <span class="n">y</span> <span class="o">=</span> <span class="n">x1</span> 
+    <span class="k">return</span> <span class="n">gcd</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span>
+
+<span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">itertools</span><span class="p">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">rands</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">2</span><span class="p">)):</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="nb">bin</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="n">y</span><span class="p">).</span><span class="n">count</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="mi">42</span><span class="p">:</span>
+        <span class="n">goodtuples</span><span class="p">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"found good tuple: "</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+        
+<span class="n">goodtuples</span><span class="p">.</span><span class="n">sort</span><span class="p">()</span>
+
+<span class="c1"># meet in the middle
+</span><span class="k">def</span> <span class="nf">tree1</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">diff</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="n">n1</span><span class="p">:</span>
+        <span class="n">lookup_one</span><span class="p">[</span><span class="n">current</span><span class="p">]</span> <span class="o">=</span> <span class="n">diff</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tree1</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul1</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">+</span> <span class="n">bits1</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span>
+        <span class="n">tree1</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul1</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">-</span> <span class="n">bits1</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">tree2</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">diff</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">su</span>
+    <span class="k">if</span> <span class="n">su</span><span class="p">:</span> <span class="k">return</span>
+    <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="n">n2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">current</span> <span class="ow">in</span> <span class="n">lookup_one</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">"sice"</span><span class="p">,</span> <span class="n">lookup_one</span><span class="p">[</span><span class="n">current</span><span class="p">],</span> <span class="n">diff</span><span class="p">,</span> <span class="n">current</span><span class="p">)</span>
+            <span class="n">su</span> <span class="o">=</span> <span class="n">lookup_one</span><span class="p">[</span><span class="n">current</span><span class="p">]</span> <span class="o">+</span> <span class="n">diff</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tree2</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul2</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">+</span> <span class="n">bits2</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span>
+        <span class="n">tree2</span><span class="p">((</span><span class="n">current</span> <span class="o">*</span> <span class="n">mul2</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">diff</span> <span class="o">-</span> <span class="n">bits2</span><span class="p">[</span><span class="n">depth</span><span class="p">])</span>
+
+<span class="n">sol</span> <span class="o">=</span> <span class="n">Solver</span><span class="p">()</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">BitVec</span><span class="p">(</span><span class="s">'d'</span><span class="p">,</span> <span class="mi">129</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">recoverflag</span><span class="p">(</span><span class="n">_d</span><span class="p">):</span>
+    <span class="n">es</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">es</span><span class="p">[(</span><span class="n">_d</span> <span class="o">^</span> <span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="n">_e1</span><span class="p">,</span> <span class="n">_e2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">es</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">e2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">es</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">gcd</span><span class="p">(</span><span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">_e1</span><span class="p">,</span> <span class="n">_e2</span> <span class="o">=</span> <span class="n">e1</span><span class="p">,</span> <span class="n">e2</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_e1</span> <span class="ow">and</span> <span class="n">_e2</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">egcd</span><span class="p">(</span><span class="n">_e1</span><span class="p">,</span> <span class="n">_e2</span><span class="p">)</span>
+    <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span> <span class="o">=</span> <span class="n">es</span><span class="p">[</span><span class="n">_e1</span><span class="p">],</span> <span class="n">es</span><span class="p">[</span><span class="n">_e2</span><span class="p">]</span>
+    <span class="n">ct1</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">ct2</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">c2</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">ct</span> <span class="o">=</span> <span class="n">ct1</span> <span class="o">*</span> <span class="n">ct2</span> <span class="o">%</span> <span class="n">n</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="p">(</span><span class="n">long_to_bytes</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">_d</span><span class="p">,</span> <span class="n">n</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="sa">b</span><span class="s">"TetCTF"</span> <span class="ow">in</span> <span class="n">flag</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"Flag: "</span><span class="p">,</span> <span class="n">flag</span><span class="p">.</span><span class="n">decode</span><span class="p">())</span>
+        <span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    
+<span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">goodtuples</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"using tuple: "</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">)</span>
+
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">tuples</span><span class="p">[</span><span class="n">v1</span><span class="p">]</span>
+    <span class="n">p2</span> <span class="o">=</span> <span class="n">tuples</span><span class="p">[</span><span class="n">v2</span><span class="p">]</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">v1</span> <span class="o">^</span> <span class="n">v2</span>
+    <span class="n">bits</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">bit_length</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">&gt;&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">bits</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="n">bits1</span> <span class="o">=</span> <span class="n">bits</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">bits2</span> <span class="o">=</span> <span class="n">bits</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">n1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bits1</span><span class="p">)</span>
+    <span class="n">n2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bits2</span><span class="p">)</span>
+    <span class="n">mul1</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="nb">pow</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bits1</span><span class="p">]</span>
+    <span class="n">mul2</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">pow</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bits2</span><span class="p">]</span>
+    
+    <span class="n">su</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">lookup_one</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">tree1</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"lookup created"</span><span class="p">)</span>
+    <span class="n">tree2</span><span class="p">(</span><span class="n">p2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="p">(</span><span class="n">p1</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">su</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span> <span class="o">==</span> <span class="n">p2</span><span class="p">)</span>
+    <span class="n">sol</span><span class="p">.</span><span class="n">add</span><span class="p">(((</span><span class="n">d</span> <span class="o">^</span> <span class="n">v2</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">d</span> <span class="o">^</span> <span class="n">v1</span><span class="p">))</span> <span class="o">==</span> <span class="n">su</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">sol</span><span class="p">.</span><span class="n">check</span><span class="p">()</span> <span class="o">==</span> <span class="n">sat</span>
+    <span class="n">_d</span> <span class="o">=</span> <span class="n">sol</span><span class="p">.</span><span class="n">model</span><span class="p">()[</span><span class="n">d</span><span class="p">].</span><span class="n">as_long</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"recovered: "</span><span class="p">,</span> <span class="n">_d</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">isPrime</span><span class="p">(</span><span class="n">_d</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"attempting to decrypt flag with: "</span><span class="p">,</span> <span class="n">_d</span><span class="p">)</span>
+        <span class="n">recoverflag</span><span class="p">(</span><span class="n">_d</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">isPrime</span><span class="p">(</span><span class="n">_d</span> <span class="o">-</span> <span class="mi">2</span><span class="o">**</span><span class="mi">128</span><span class="p">):</span> <span class="c1"># z3 weird af
+</span>        <span class="k">print</span><span class="p">(</span><span class="s">"attempting to decrypt flag with: "</span><span class="p">,</span> <span class="n">_d</span> <span class="o">-</span> <span class="mi">2</span><span class="o">**</span><span class="mi">128</span><span class="p">)</span>
+        <span class="n">recoverflag</span><span class="p">(</span><span class="n">_d</span> <span class="o">-</span> <span class="mi">2</span><span class="o">**</span><span class="mi">128</span><span class="p">)</span>
+
+<span class="c1"># Flag: TetCTF{4n_unr34l1st1c_f4ult____1_th1nk}
+</span></code></pre></div></div>
+
+<h4 id="flag-tetctf4n_unr34l1st1c_f4ult____1_th1nk">Flag: <code class="language-plaintext highlighter-rouge">TetCTF{4n_unr34l1st1c_f4ult____1_th1nk}</code></h4>
+
+<p>sidenote: i rewrote this on around the 10th of january because it didn’t read very nicely.</p>
+
+
+</article>
+
+
+
+<div class="post-pagination">
+  
+    <a class="post-pagination-item newer" href="2022-02-28-susctf.html">
+      <i class="fas fa-chevron-left"></i> <span class="post-pagination-title">SUSCTF 2022
+</span>
+    </a>
+  
+
+  
+    <a class="post-pagination-item older" href="2021-12-25-asis-finals.html">
+      <span class="post-pagination-title">ASIS CTF Finals 2021
+</span> <i class="fas fa-chevron-right"></i>
+    </a>
+  
+</div>
+
+        </main>
+
+        <footer class="footer">
+          <small>
+            made with the <a href="https://github.com/zivong/ockham">ockham</a> theme and <a href="https://jekyllrb.com/">jekyll</a> 
+          </small>
+        </footer>
+      </div>
+    </div>
+
+    <label for="sidebar-checkbox" class="sidebar-toggle"></label>
+
+    
+  </body>
+
+<!-- Mirrored from willwam.me/posts/2022-01-02-tetctf by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 20 Feb 2023 20:37:13 GMT -->
+</html>
